@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Select User Type{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl mx-auto">
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+        <p class="text-gray-600">Please select your account type to continue</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <!-- Patient Login Card -->
+        <a href="{% url 'patient_login' %}" class="group">
+            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-2xl transition duration-200 transform hover:scale-105 cursor-pointer border-2 border-transparent group-hover:border-indigo-500">
+                <div class="text-center">
+                    <div class="inline-block bg-indigo-100 p-4 rounded-full mb-4">
+                        <svg class="h-16 w-16 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Patient Login</h2>
+                    <p class="text-gray-600 mb-4">Access your treatment plans and medical records</p>
+                    <div class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg group-hover:bg-indigo-700 transition duration-200">
+                        Continue as Patient
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- Doctor Login Card -->
+        <a href="{% url 'doctor_login' %}" class="group">
+            <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-2xl transition duration-200 transform hover:scale-105 cursor-pointer border-2 border-transparent group-hover:border-green-500">
+                <div class="text-center">
+                    <div class="inline-block bg-green-100 p-4 rounded-full mb-4">
+                        <svg class="h-16 w-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Doctor Login</h2>
+                    <p class="text-gray-600 mb-4">Manage patient care and treatment plans</p>
+                    <div class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg group-hover:bg-green-700 transition duration-200">
+                        Continue as Doctor
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}
