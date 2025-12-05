@@ -43,18 +43,152 @@ class PatientProfile(models.Model):
 
 
 class DoctorProfile(models.Model):
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
+    
+    SPECIALIZATION_CHOICES = [
+        ('general_medicine', 'General Medicine'),
+        ('internal_medicine', 'Internal Medicine'),
+        ('family_medicine', 'Family Medicine'),
+        ('pediatrics', 'Pediatrics'),
+        ('surgery', 'General Surgery'),
+        ('orthopedics', 'Orthopedics'),
+        ('cardiology', 'Cardiology'),
+        ('neurology', 'Neurology'),
+        ('psychiatry', 'Psychiatry'),
+        ('dermatology', 'Dermatology'),
+        ('ophthalmology', 'Ophthalmology'),
+        ('ent', 'ENT (Ear, Nose & Throat)'),
+        ('gynecology', 'Gynecology & Obstetrics'),
+        ('urology', 'Urology'),
+        ('nephrology', 'Nephrology'),
+        ('gastroenterology', 'Gastroenterology'),
+        ('pulmonology', 'Pulmonology'),
+        ('endocrinology', 'Endocrinology'),
+        ('rheumatology', 'Rheumatology'),
+        ('oncology', 'Oncology'),
+        ('surgical_oncology', 'Surgical Oncology'),
+        ('radiation_oncology', 'Radiation Oncology'),
+        ('medical_oncology', 'Medical Oncology'),
+        ('pediatric_oncology', 'Pediatric Oncology'),
+        ('hematology', 'Hematology'),
+        ('radiology', 'Radiology'),
+        ('pathology', 'Pathology'),
+        ('anesthesiology', 'Anesthesiology'),
+        ('emergency_medicine', 'Emergency Medicine'),
+        ('critical_care', 'Critical Care Medicine'),
+        ('plastic_surgery', 'Plastic Surgery'),
+        ('neurosurgery', 'Neurosurgery'),
+        ('cardiothoracic_surgery', 'Cardiothoracic Surgery'),
+        ('vascular_surgery', 'Vascular Surgery'),
+        ('transplant_surgery', 'Transplant Surgery'),
+        ('infectious_disease', 'Infectious Disease'),
+        ('allergy_immunology', 'Allergy & Immunology'),
+        ('geriatrics', 'Geriatrics'),
+        ('sports_medicine', 'Sports Medicine'),
+        ('physical_medicine', 'Physical Medicine & Rehabilitation'),
+        ('occupational_medicine', 'Occupational Medicine'),
+        ('preventive_medicine', 'Preventive Medicine'),
+        ('other', 'Other'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='doctor_profile')
-    specialization = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Basic Information
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    
+    # Professional Information
+    specialization = models.CharField(max_length=100, choices=SPECIALIZATION_CHOICES, null=True, blank=True)
     license_number = models.CharField(max_length=50, unique=True)
     years_of_experience = models.IntegerField(null=True, blank=True)
+    
+    # Qualifications
+    medical_degree = models.CharField(max_length=200, null=True, blank=True, help_text="e.g., MBBS, MD, DM")
+    additional_qualifications = models.TextField(null=True, blank=True, help_text="Other certifications or qualifications")
+    
+    # Work Information
     hospital_affiliation = models.CharField(max_length=200, null=True, blank=True)
     department = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Location Information
+    clinic_address = models.TextField(null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    pincode = models.CharField(max_length=10, null=True, blank=True)
+    country = models.CharField(max_length=100, default='India')
+    
+    # Professional Details
     consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    bio = models.TextField(null=True, blank=True)
+    bio = models.TextField(null=True, blank=True, help_text="Brief description about yourself and expertise")
+    languages_spoken = models.CharField(max_length=200, null=True, blank=True, help_text="Comma-separated languages")
+    
+    # Verification & Status
     is_verified = models.BooleanField(default=False)
+    profile_completed = models.BooleanField(default=False)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
     
     def __str__(self):
         return f"Dr. {self.user.username} - {self.specialization}"
     
     class Meta:
         db_table = 'doctor_profiles'
+
+
+class MedicalRecord(models.Model):
+    RECORD_TYPE_CHOICES = [
+        ('lab_report', 'Lab Report'),
+        ('radiology', 'Radiology Report'),
+        ('pathology', 'Pathology Report'),
+        ('biopsy', 'Biopsy Report'),
+        ('blood_test', 'Blood Test'),
+        ('genetic_test', 'Genetic Test'),
+        ('prescription', 'Prescription'),
+        ('discharge_summary', 'Discharge Summary'),
+        ('consultation', 'Consultation Notes'),
+        ('other', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='medical_records')
+    record_type = models.CharField(max_length=50, choices=RECORD_TYPE_CHOICES, default='other')
+    title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+    
+    # File storage
+    file = models.FileField(upload_to='medical_records/%Y/%m/%d/')
+    file_size = models.IntegerField(null=True, blank=True)  # in bytes
+    
+    # OCR extracted data
+    extracted_text = models.TextField(null=True, blank=True)
+    extracted_data = models.JSONField(null=True, blank=True)  # Structured data
+    ocr_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    ocr_confidence = models.FloatField(null=True, blank=True)  # 0-100
+    
+    # Metadata
+    report_date = models.DateField(null=True, blank=True)
+    hospital_name = models.CharField(max_length=200, null=True, blank=True)
+    doctor_name = models.CharField(max_length=200, null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.title} - {self.patient.username}"
+    
+    class Meta:
+        db_table = 'medical_records'
+        ordering = ['-created_at']
