@@ -26,13 +26,27 @@ def login_page(request):
 def patient_login(request):
     """Patient login page"""
     if request.user.is_authenticated:
-        return redirect('home')
+        # If user is already logged in as a patient, go to patient dashboard
+        if request.user.user_type == 'patient':
+            messages.info(request, 'You are already logged in as a patient.')
+            return redirect('patient_dashboard')
+        # If user is logged in as a doctor, redirect to doctor dashboard
+        elif request.user.user_type == 'doctor':
+            messages.warning(request, 'You are logged in as a doctor. Please logout first to access patient login.')
+            return redirect('doctor_dashboard')
     return render(request, 'authentication/patient_login.html')
 
 def doctor_login(request):
     """Doctor login page"""
     if request.user.is_authenticated:
-        return redirect('home')
+        # If user is already logged in as a doctor, go to doctor dashboard
+        if request.user.user_type == 'doctor':
+            messages.info(request, 'You are already logged in as a doctor.')
+            return redirect('doctor_dashboard')
+        # If user is logged in as a patient, redirect to patient dashboard
+        elif request.user.user_type == 'patient':
+            messages.warning(request, 'You are logged in as a patient. Please logout first to access doctor login.')
+            return redirect('patient_dashboard')
     return render(request, 'authentication/doctor_login.html')
 
 @csrf_exempt
@@ -86,6 +100,13 @@ def auth_callback(request):
                     'profile_picture': supabase_user.user_metadata.get('avatar_url', ''),
                 }
             )
+            
+            # If user already exists with a different role, prevent login
+            if not created and user.user_type != user_type:
+                return JsonResponse({
+                    'error': f'This account is registered as a {user.user_type}. Please use the {user.user_type} login.',
+                    'redirect_url': f'/login/{user.user_type}/' if user.user_type in ['patient', 'doctor'] else '/login/'
+                }, status=403)
             
             # Create profile based on user type if user was just created
             if created:

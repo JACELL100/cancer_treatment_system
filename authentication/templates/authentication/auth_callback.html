@@ -7,13 +7,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
-    <div class="text-center">
+    <div id="auth-content" class="text-center">
         <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mb-4"></div>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Authenticating...</h2>
         <p class="text-gray-600">Please wait while we sign you in</p>
     </div>
 
+    <!-- Error Display -->
+    <div id="error-content" class="hidden max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Authentication Error</h3>
+            <p id="error-message" class="text-sm text-gray-600 mb-6"></p>
+            <a id="redirect-link" href="/login/" class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Go to Login
+            </a>
+        </div>
+    </div>
+
     <script>
+        // Function to display error in the portal
+        function showError(message, redirectUrl) {
+            document.getElementById('auth-content').classList.add('hidden');
+            document.getElementById('error-content').classList.remove('hidden');
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('redirect-link').href = redirectUrl;
+        }
+
         // Extract tokens from URL hash fragment
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
@@ -41,26 +65,32 @@
                     user_type: userType
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            .then(response => {
+                return response.json().then(data => ({
+                    status: response.status,
+                    data: data
+                }));
+            })
+            .then(({status, data}) => {
+                if (status === 200 && data.success) {
                     // Clear sessionStorage
                     sessionStorage.removeItem('user_type');
                     // Redirect to dashboard
                     window.location.href = data.redirect_url;
+                } else if (status === 403) {
+                    // Role mismatch error - display in portal
+                    showError(data.error || 'Authentication failed', data.redirect_url || '/login/');
                 } else {
                     throw new Error(data.error || 'Authentication failed');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Authentication failed: ' + error.message);
-                window.location.href = '/login/';
+                showError(error.message || 'Authentication failed. Please try again.', '/login/');
             });
         } else {
             // No tokens found, redirect to login
-            alert('Authentication failed: No access token received');
-            window.location.href = '/login/';
+            showError('No access token received. Please try logging in again.', '/login/');
         }
     </script>
 </body>
