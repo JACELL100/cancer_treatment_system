@@ -315,7 +315,34 @@ def kyc_preview(request):
         'doctor_profile': doctor_profile,
     }
     
-    return render(request, 'authentication/kyc_preview.html', context)# Medical Records Views
+    return render(request, 'authentication/kyc_preview.html', context)
+
+
+def doctor_profile_edit(request):
+    """Edit doctor profile"""
+    if not request.user.is_authenticated or request.user.user_type != 'doctor':
+        messages.error(request, 'Please login as a doctor to access this page.')
+        return redirect('doctor_login')
+    
+    try:
+        doctor_profile = DoctorProfile.objects.get(user=request.user)
+    except DoctorProfile.DoesNotExist:
+        messages.error(request, 'Profile not found.')
+        return redirect('doctor_dashboard')
+    
+    if request.method == 'POST':
+        form = DoctorProfileForm(request.POST, instance=doctor_profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('doctor_dashboard')
+    else:
+        form = DoctorProfileForm(instance=doctor_profile)
+    
+    return render(request, 'authentication/doctor_profile_edit.html', {'form': form})
+
+
+# Medical Records Views
 def medical_records_list(request):
     """List all medical records for the patient"""
     if not request.user.is_authenticated or request.user.user_type != 'patient':
