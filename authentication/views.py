@@ -114,11 +114,8 @@ def auth_callback(request):
             if created:
                 if user_type == 'patient':
                     PatientProfile.objects.create(user=user)
-                elif user_type == 'doctor':
-                    DoctorProfile.objects.create(
-                        user=user,
-                        license_number=f"TEMP_{user.id}"  # Should be updated later
-                    )
+                # Note: Doctor profiles are created when KYC form is submitted
+
             
             # Store tokens in session
             request.session['access_token'] = access_token
@@ -132,7 +129,11 @@ def auth_callback(request):
             if user_type == 'patient':
                 redirect_url = '/patient/dashboard/'
             else:
-                redirect_url = '/doctor/dashboard/'
+                # Redirect doctors to KYC form if profile doesn't exist
+                if not DoctorProfile.objects.filter(user=user).exists():
+                    redirect_url = '/kyc/form/'
+                else:
+                    redirect_url = '/doctor/dashboard/'
             
             return JsonResponse({
                 'success': True,
@@ -172,7 +173,12 @@ def doctor_dashboard(request):
     if not request.user.is_authenticated or request.user.user_type != 'doctor':
         return redirect('doctor_login')
     
-    doctor_profile = DoctorProfile.objects.get(user=request.user)
+    try:
+        doctor_profile = DoctorProfile.objects.get(user=request.user)
+    except DoctorProfile.DoesNotExist:
+        # Profile doesn't exist, redirect to KYC form
+        messages.warning(request, 'Please complete your profile first.')
+        return redirect('kyc_form')
     
     try:
         kyc = DoctorKYC.objects.get(doctor=doctor_profile)
@@ -192,7 +198,11 @@ def kyc_status(request):
     if not request.user.is_authenticated or request.user.user_type != 'doctor':
         return redirect('doctor_login')
     
-    doctor_profile = DoctorProfile.objects.get(user=request.user)
+    try:
+        doctor_profile = DoctorProfile.objects.get(user=request.user)
+    except DoctorProfile.DoesNotExist:
+        messages.warning(request, 'Please complete your profile first.')
+        return redirect('kyc_form')
     
     try:
         kyc = DoctorKYC.objects.get(doctor=doctor_profile)
@@ -212,7 +222,15 @@ def kyc_form(request):
     if not request.user.is_authenticated or request.user.user_type != 'doctor':
         return redirect('doctor_login')
     
-    doctor_profile = DoctorProfile.objects.get(user=request.user)
+    # Create doctor profile if it doesn't exist
+    doctor_profile, created = DoctorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'license_number': f"TEMP_{request.user.id}",
+            'country': 'Unknown',
+            'profile_completed': False
+        }
+    )
     
     try:
         kyc = DoctorKYC.objects.get(doctor=doctor_profile)
@@ -297,7 +315,11 @@ def kyc_preview(request):
     if not request.user.is_authenticated or request.user.user_type != 'doctor':
         return redirect('doctor_login')
     
-    doctor_profile = DoctorProfile.objects.get(user=request.user)
+    try:
+        doctor_profile = DoctorProfile.objects.get(user=request.user)
+    except DoctorProfile.DoesNotExist:
+        messages.warning(request, 'Please complete your profile first.')
+        return redirect('kyc_form')
     
     try:
         kyc = DoctorKYC.objects.get(doctor=doctor_profile)

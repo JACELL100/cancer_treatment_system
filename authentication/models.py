@@ -52,6 +52,8 @@ class DoctorProfile(models.Model):
     consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
+    country = models.CharField(max_length=100, default='Unknown')
+    profile_completed = models.BooleanField(default=False)
     
     def __str__(self):
         return f"Dr. {self.user.username} - {self.specialization}"
